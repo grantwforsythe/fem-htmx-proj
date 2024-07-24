@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"io"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -23,6 +24,7 @@ func newTemplate() *Templates {
 }
 
 type Contact struct {
+	Id    uuid.UUID
 	Name  string
 	Email string
 }
@@ -31,6 +33,7 @@ func newContact(name, email string) Contact {
 	return Contact{
 		Name:  name,
 		Email: email,
+		Id:    uuid.New(),
 	}
 }
 
@@ -56,6 +59,15 @@ func (d *Data) hasEmail(email string) bool {
 		}
 	}
 	return false
+}
+
+func (d *Data) indexOf(id uuid.UUID) int {
+	for i, contact := range d.Contacts {
+		if contact.Id == id {
+			return i
+		}
+	}
+	return -1
 }
 
 type FormData struct {
@@ -86,6 +98,9 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 
+	e.Static("/images", "images")
+	e.Static("/css", "css")
+
 	page := newPage()
 	e.Renderer = newTemplate()
 
@@ -93,7 +108,7 @@ func main() {
 		return c.Render(200, "index", page)
 	})
 
-	e.POST("/contact", func(c echo.Context) error {
+	e.POST("/contacts", func(c echo.Context) error {
 		name := c.FormValue("name")
 		email := c.FormValue("email")
 
@@ -110,6 +125,18 @@ func main() {
 
 		c.Render(200, "createContact", newFormData())
 		return c.Render(200, "oob-contact", contact)
+	})
+
+	e.DELETE("/contacts/:id", func(c echo.Context) error {
+		id := c.Param("id")
+
+		index := page.Data.indexOf(uuid.MustParse(id))
+		if index == -1 {
+			return c.String(404, "Contact not found")
+		}
+
+		page.Data.Contacts = append(page.Data.Contacts[:index], page.Data.Contacts[index+1:]...)
+		return c.NoContent(200)
 	})
 
 	e.Logger.Fatal(e.Start(":1323"))

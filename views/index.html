@@ -5,10 +5,10 @@
         <title></title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link href="css/style.css" rel="stylesheet">
+        <link href="/css/index.css" rel="stylesheet">
         <script src="https://unpkg.com/htmx.org/dist/htmx.min.js"></script>
     </head>
-    <body>
+<body>
       {{ template "createContact" .Form }}
       <hr/>
       {{ template "contacts" .Data }}
@@ -16,7 +16,7 @@
         document.addEventListener("DOMContentLoaded", (_event) => {
           document.body.addEventListener("htmx:beforeSwap", function(event) {
             // Allow 422 responses to swap as this is an indicator that the submitted form contained invalid data
-            if (event.detail.xhr.status === 422) {
+if (event.detail.xhr.status === 422) {
               // HTMX doesn't swap 400 responses by default
               event.detail.shouldSwap = true;
               // Don't log errors to the console
@@ -30,7 +30,7 @@
 {{ end }}
 
 {{ block "createContact" . }}
-  <form hx-post="/contact" hx-swap="outerHTML">
+  <form hx-post="/contacts" hx-swap="outerHTML">
     <label for="name">Name</label>
     <input
       {{ if .Values.name }} value="{{ .Values.name }}" {{ end }}
@@ -59,7 +59,24 @@
 {{ end }}
 
 {{ block "contact" . }}
-  <div>{{ .Name }} ({{ .Email }})</div>
+    <div id="contact-{{ .Id }}" class="contact" style="display: flex">
+      <div
+        hx-delete="/contacts/{{ .Id }}"
+        hx-swap="outerHTML swap:1000ms"
+        hx-target="#contact-{{ .Id }}"
+        hx-indicator="#indicator-{{ .Id }}"
+        style="width: 1rem; cursor: pointer;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path fill="none" d="M0 0h24v24H0z"/>
+          <path d="M4 2h16a1 1 0 011 1v1a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1zM3 6h18v16a1 1 0 01-1 1H4a1 1 0 01-1-1V6zm3 3v9a1 1 0 002 0v-9a1 1 0 00-2 0zm5 0v9a1 1 0 002 0v-9a1 1 0 00-2 0zm5 0v9a1 1 0 002 0v-9a1 1 0 00-2 0z"/>
+        </svg>
+      </div>
+    <div>{{ .Name }} ({{ .Email }})</div>
+
+    <div id="indicator-{{ .Id }}" class="htmx-indicator">
+      <img src="/images/bars.svg" alt="loading" style="width: 1rem">
+    </div>
+  </div>
 {{ end }}
 
 {{ block "oob-contact" . }}
